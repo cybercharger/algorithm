@@ -1,6 +1,6 @@
 from typing import Tuple, List, Dict
 from unittest import TestCase
-from dijkstra import Solution
+from shortest_path import Solution
 
 
 class TestSolution(TestCase):
