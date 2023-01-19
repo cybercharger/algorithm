@@ -12,7 +12,7 @@ class Solution:
         valid = number.lstrip().lstrip('0')
         if valid[0] != '-':
             res = [0] + [int(d) for d in valid]
-            return res if res[0] < 5 else [0] + res
+            return res
 
         res = []
         carry_over = 1
@@ -24,7 +24,7 @@ class Solution:
             res.insert(0, value % 10)
             carry_over = value // 10
 
-        return [9] + res if res[0] < 5 else res
+        return [9] + res
 
     @staticmethod
     def align(num1: list, num2: list) -> Tuple[List[int], List[int]]:
