@@ -54,7 +54,7 @@ class Solution:
             entry = heapq.heappop(heap)
 
             # update heap element index ref
-            # tail element will be moved to head after popping up, and flipped down to make the heap valid again
+            # tail element will be moved to head after popping out the top elm, and flipped down to make the heap valid again
             # all other elements will be flipped only once except the tail elm, hence,
             # the index of flipped elm is the original index of it,
             # just following the index down until a non-flipped elm found or reaching the leaf elm
@@ -75,7 +75,7 @@ class Solution:
                     entry = to_visit[vertex]
                     entry[0] = min_dis + dis
 
-                    # since heap is maintained, just bubbling up the changed value to proper position will keep the heap valid
+                    # since heap is valid before the change, just bubbling up the changed value to proper position will keep the heap valid
                     cur = entry[2]
                     while cur > 0:
                         parent = (cur - 1) // 2
