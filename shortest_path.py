@@ -1,43 +1,43 @@
 import heapq
-from typing import Dict
+from typing import Dict, Tuple
 
 
 class Solution:
-    INT_MAX = 0x7ffffffff
+    MAX_DISTANCE = 0x7ffffffff
 
-    def dijkstra(self, graph: Dict[str, Dict[str, int]], vertex: str) -> Dict[str, int]:
-        if vertex not in graph:
+    def dijkstra(self, graph: Dict[str, Dict[str, int]], source: str) -> Dict[str, Tuple[int, str]]:
+        if source not in graph:
             return dict()
-        result = {vertex: 0}
-        # TODO: use priority queue for this
-        not_visited = {n: graph[vertex][n] if n in graph[vertex] else self.INT_MAX for n in graph}
-        del not_visited[vertex]
+        result = {source: (0, source)}
+        to_visit = {v: (graph[source].get(v, self.MAX_DISTANCE), source) for v in graph if v != source}
 
-        while len(not_visited) > 0:
+        while to_visit:
             # get the shortest distance
-            min_dis = self.INT_MAX
+            min_dis = self.MAX_DISTANCE
             picked = None
-            for vertex, dis in not_visited.items():
+            from_v = None
+            for vertex, (dis, prev) in to_visit.items():
                 if dis <= min_dis:
                     min_dis = dis
                     picked = vertex
+                    from_v = prev
 
-            result[picked] = min_dis
-            del not_visited[picked]
+            result[picked] = (min_dis, from_v)
+            del to_visit[picked]
             # update result
             for vertex, dis in graph[picked].items():
-                if vertex in not_visited and not_visited[vertex] > min_dis + dis:
-                    not_visited[vertex] = min_dis + dis
+                if vertex in to_visit and to_visit[vertex][0] > min_dis + dis:
+                    to_visit[vertex] = (min_dis + dis, picked)
 
         return result
 
-    def dijkstra_by_heap(self, graph: Dict[str, Dict[str, int]], target: str) -> Dict[str, int]:
-        if target not in graph:
+    def dijkstra_by_heap(self, graph: Dict[str, Dict[str, int]], source: str) -> Dict[str, Tuple[int, str]]:
+        if source not in graph:
             return dict()
-        result = {target: 0}
-        # every element in heap is [distance_from_target, vertex_name],
+        result = {source: (0, source)}
+        # every element in heap is [distance_from_target, vertex_name, heap_idx, prev_vertex]
         # TC: O(V)
-        heap = [[graph[target][v] if v in graph[target] else self.INT_MAX, v, 0] for v in graph if v != target]
+        heap = [[graph[source].get(v, self.MAX_DISTANCE), v, 0, source] for v in graph if v != source]
         # TC: O(V * logV)
         heapq.heapify(heap)
 
@@ -63,9 +63,9 @@ class Solution:
             while len(heap) > idx != heap[idx][2]:
                 heap[idx][2], idx = idx, heap[idx][2]
 
-            min_dis, picked = entry[0], entry[1]
+            min_dis, picked, prev = entry[0], entry[1], entry[3]
 
-            result[picked] = min_dis
+            result[picked] = (min_dis, prev)
             del to_visit[picked]
             # update result
 
@@ -74,6 +74,7 @@ class Solution:
                 if vertex in to_visit and to_visit[vertex][0] > min_dis + dis:
                     entry = to_visit[vertex]
                     entry[0] = min_dis + dis
+                    entry[3] = picked
 
                     # since heap is valid before the change, just bubbling up the changed value to proper position will keep the heap valid
                     cur = entry[2]
@@ -84,5 +85,29 @@ class Solution:
                         heap[cur], heap[parent] = heap[parent], heap[cur]
                         heap[cur][2], heap[parent][2] = cur, parent
                         cur = parent
+
+        return result
+
+    def dijkstra_by_heap_v2(self, graph: Dict[str, Dict[str, int]], source: str) -> Dict[str, Tuple[int, str]]:
+        if source not in graph:
+            return dict()
+        result = {v: (self.MAX_DISTANCE, source) for v in graph}
+        result[source] = (0, source)
+        to_visit = {v: (graph[source].get(v, self.MAX_DISTANCE), source) for v in graph if v != source}
+        heap = []
+        for v, d in graph[source].items():
+            heapq.heappush(heap, (d, v, source))
+
+        while to_visit and heap:
+            min_dis, picked, prev = heapq.heappop(heap)
+            if picked not in to_visit:
+                continue
+
+            del to_visit[picked]
+            result[picked] = (min_dis, prev)
+            for v, d in graph[picked].items():
+                if v in to_visit and min_dis + d < to_visit[v][0]:
+                    to_visit[v] = (min_dis + d, picked)
+                    heapq.heappush(heap, (min_dis + d, v, picked))
 
         return result
