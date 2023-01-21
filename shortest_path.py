@@ -92,11 +92,8 @@ class Solution:
         if source not in graph:
             return dict()
         result = {v: (self.MAX_DISTANCE, source) for v in graph}
-        result[source] = (0, source)
-        to_visit = {v: (graph[source].get(v, self.MAX_DISTANCE), source) for v in graph if v != source}
-        heap = []
-        for v, d in graph[source].items():
-            heapq.heappush(heap, (d, v, source))
+        to_visit = {v: (self.MAX_DISTANCE, source) for v in graph}
+        heap = [(0, source, source)]
 
         while to_visit and heap:
             min_dis, picked, prev = heapq.heappop(heap)
