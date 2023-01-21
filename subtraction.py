@@ -2,9 +2,6 @@ from typing import List, Tuple
 
 
 class Solution:
-    def __int__(self):
-        pass
-
     @staticmethod
     def to_complement(number: str) -> list:
         if number is None:
