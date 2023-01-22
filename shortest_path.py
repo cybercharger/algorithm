@@ -6,7 +6,13 @@ class Solution:
     MAX_DISTANCE = 0x7ffffffff
 
     def dijkstra(self, graph: Dict[str, Dict[str, int]], source: str) -> Dict[str, Tuple[int, str]]:
-        if source not in graph:
+        """
+
+        :param graph:
+        :param source: source vertex
+        :return: Dict, key is the destination vertex, value is tuple (the shortest distance, previous vertex along the path)
+        """
+        if not graph or source not in graph:
             return dict()
         result = {source: (0, source)}
         to_visit = {v: (graph[source].get(v, self.MAX_DISTANCE), source) for v in graph if v != source}
@@ -32,7 +38,13 @@ class Solution:
         return result
 
     def dijkstra_by_heap(self, graph: Dict[str, Dict[str, int]], source: str) -> Dict[str, Tuple[int, str]]:
-        if source not in graph:
+        """
+
+        :param graph:
+        :param source: source vertex
+        :return: Dict, key is the destination vertex, value is tuple (the shortest distance, previous vertex along the path)
+        """
+        if not graph or source not in graph:
             return dict()
         result = {source: (0, source)}
         # every element in heap is [distance_from_target, vertex_name, heap_idx, prev_vertex]
@@ -89,7 +101,13 @@ class Solution:
         return result
 
     def dijkstra_by_heap_v2(self, graph: Dict[str, Dict[str, int]], source: str) -> Dict[str, Tuple[int, str]]:
-        if source not in graph:
+        """
+
+        :param graph:
+        :param source: source vertex
+        :return: Dict, key is the destination vertex, value is tuple (the shortest distance, previous vertex along the path)
+        """
+        if not graph or source not in graph:
             return dict()
         result = {v: (self.MAX_DISTANCE, source) for v in graph}
         to_visit = {v: (self.MAX_DISTANCE, source) for v in graph}
@@ -110,7 +128,13 @@ class Solution:
         return result
 
     def bellman_ford(self, graph: Dict[str, Dict[str, int]], source: str) -> Tuple[Dict[str, Tuple[int, str]], bool]:
-        if source not in graph:
+        """
+
+        :param graph:
+        :param source: source vertex
+        :return: Dict, key is the destination vertex, value is tuple (the shortest distance, previous vertex along the path)
+        """
+        if not graph or source not in graph:
             return dict(), False
         result = {v: (self.MAX_DISTANCE, source) for v in graph}
         result[source] = (0, source)
@@ -150,3 +174,49 @@ class Solution:
                     break
 
         return result, negative_circle
+
+    def floyd_warshall(self, graph: Dict[str, Dict[str, int]]) -> Dict[str, Dict[str, int]]:
+        """
+        Floyd-Warshall is a DP algorithm to calculate the shortest distance for every pair of vertices within the graph.
+        The algorithm is not based on edges, so the shortest path cannot be backtracked directly as Dijkstra or Bellman-Ford do
+        coz the other two algorithms are based on edges.
+        For example:
+        Given graph: A -> B -> C -> D,
+        Distance(A, D) can be calculated based on Distance(A, B) + Distance(B, D) or Distance(A, C) + Distance(C, D) depending on
+        how the vertices are ordered, therefore, the latest update for Distance(A, D) can be caused by vertex B, but there is no
+        edge from B to D.
+        :param graph: Dict, key is the source vertex, value is another Dict for edges with weight from source vertex
+        :return: Dict, key is source vertex, value is Dict of the shortest distance from source to destination
+        """
+        if not graph:
+            return dict()
+
+        idx_map = dict()
+        rev_map = []
+        for i, v in enumerate(graph.keys()):
+            idx_map[v] = i
+            rev_map.append(v)
+
+        dimension = len(graph.keys())
+
+        matrix = [[self.MAX_DISTANCE if r != c else 0 for c in range(dimension)] for r in range(dimension)]
+
+        for v, edges in graph.items():
+            for u, d in edges.items():
+                matrix[idx_map[v]][idx_map[u]] = d
+
+        for k in range(dimension):
+            for i in range(dimension):
+                for j in range(dimension):
+                    if matrix[i][j] > matrix[i][k] + matrix[k][j]:
+                        matrix[i][j] = matrix[i][k] + matrix[k][j]
+
+        result = dict()
+        for r in range(dimension):
+            v = rev_map[r]
+            row_map = dict()
+            result[v] = row_map
+            for c in range(dimension):
+                row_map[rev_map[c]] = matrix[r][c]
+
+        return result

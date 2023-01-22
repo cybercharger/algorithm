@@ -1,5 +1,6 @@
 from typing import Tuple, List, Dict
 from unittest import TestCase
+
 from shortest_path import Solution
 
 
@@ -27,18 +28,22 @@ class TestSolution(TestCase):
             graph[n2].update({n1: distance})
         return graph
 
-    def test_dijkstra(self):
+    def test_shortest_path(self):
         graph = self.gen_graph(self.edges)
         print(graph)
         solution = Solution()
+
+        res_all = solution.floyd_warshall(graph)
+
         res1 = solution.dijkstra(graph, 'A')
         res2 = solution.dijkstra_by_heap(graph, 'A')
-        res3 = solution.dijkstra_by_heap_v2(graph, 'A')
         self.assertEqual(res1, res2)
+        res3 = solution.dijkstra_by_heap_v2(graph, 'A')
         self.assertEqual(res1, res3)
         res4, negative_circle = solution.bellman_ford(graph, 'A')
         self.assertEqual(res1, res4)
         self.assertFalse(negative_circle)
+        self.assertEqual({k: v[0] for k, v in res1.items()}, res_all['A'])
         print(res1)
         res1 = solution.dijkstra(graph, 'D')
         res2 = solution.dijkstra_by_heap(graph, 'D')
@@ -48,4 +53,5 @@ class TestSolution(TestCase):
         res4, negative_circle = solution.bellman_ford(graph, 'D')
         self.assertEqual(res1, res4)
         self.assertFalse(negative_circle)
+        self.assertEqual({k: v[0] for k, v in res1.items()}, res_all['D'])
         print(res1)
