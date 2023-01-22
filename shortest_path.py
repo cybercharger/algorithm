@@ -108,3 +108,32 @@ class Solution:
                     heapq.heappush(heap, (min_dis + d, v, picked))
 
         return result
+
+    def bellman_ford(self, graph: Dict[str, Dict[str, int]], source: str) -> Tuple[Dict[str, Tuple[int, str]], bool]:
+        if source not in graph:
+            return dict(), False
+        result = {v: (self.MAX_DISTANCE, source) for v in graph}
+        result[source] = (0, source)
+
+        relaxed = True
+        for _ in graph.keys():
+            if not relaxed:
+                break
+            relaxed = False
+            for v, edges in graph.items():
+                if v is source:
+                    continue
+                for u, d in edges.items():
+                    if result[v][0] > result[u][0] + d:
+                        result[v] = (result[u][0] + d, u)
+                        relaxed = True
+
+        # check negative circle
+        negative_circle = False
+        for v, edges in graph.items():
+            for u, dis in edges.items():
+                if result[v][0] > result[u][0] + dis:
+                    negative_circle = True
+                    break
+
+        return result, negative_circle
