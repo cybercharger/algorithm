@@ -115,18 +115,31 @@ class Solution:
         result = {v: (self.MAX_DISTANCE, source) for v in graph}
         result[source] = (0, source)
 
+        # optimization for time complexity
+        # For graph as: S -> A -> B -> C -> D  X -> Y, Y -> Z
+        # 1. edges: X -> Y & Y -> Z could be ignored when calculating shortest path from S, coz they're not connected
+        # 2. order of edges matters, if (S, A), (A, B), (B, C), (C, D) is faster than (C, D), (B, C), (A, B), (S, A)
+        #    coz the relaxations can happen in one iteration for order1, while 4 iterations are needed to apply all relaxations
+        # TODO: confirm that whether edges to source can be ignored? say, negative case?
+        valid_edges = []
+        visited = {source}
+        to_visit = [source]
+        while to_visit:
+            cur = to_visit.pop()
+            for v, dis in graph[cur].items():
+                valid_edges.append((cur, v, dis))
+                if v not in visited:
+                    visited.add(v)
+                    to_visit.insert(0, v)
+
         relaxed = True
-        for _ in graph.keys():
+        for _ in range(len(graph.keys()) - 1):
             if not relaxed:
                 break
             relaxed = False
-            for v, edges in graph.items():
-                if v is source:
-                    continue
-                for u, d in edges.items():
-                    if result[v][0] > result[u][0] + d:
-                        result[v] = (result[u][0] + d, u)
-                        relaxed = True
+            for u, v, dis in valid_edges:
+                if result[v][0] > result[u][0] + dis:
+                    result[v] = (result[u][0] + dis, u)
 
         # check negative circle
         negative_circle = False
