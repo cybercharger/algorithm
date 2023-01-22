@@ -140,10 +140,11 @@ class Solution:
         result[source] = (0, source)
 
         # optimization for time complexity
-        # For graph as: S -> A -> B -> C -> D  X -> Y, Y -> Z
+        # For graph as: S -> A -> B -> C -> D,  X -> Y, Y -> Z
         # 1. edges: X -> Y & Y -> Z could be ignored when calculating shortest path from S, coz they're not connected
-        # 2. order of edges matters, if (S, A), (A, B), (B, C), (C, D) is faster than (C, D), (B, C), (A, B), (S, A)
-        #    coz the relaxations can happen in one iteration for order1, while 4 iterations are needed to apply all relaxations
+        # 2. order of edges matters, sequence (S, A), (A, B), (B, C), (C, D) is faster than sequence (C, D), (B, C), (A, B), (S, A)
+        #    coz the relaxations can happen in one iteration for sequence1 and can be stopped after 2nd iteration,
+        #    while 4 iterations are needed to apply all relaxations for sequence2
         # TODO: confirm that whether edges to source can be ignored? say, negative case?
         valid_edges = []
         visited = {source}
@@ -164,16 +165,15 @@ class Solution:
             for u, v, dis in valid_edges:
                 if result[v][0] > result[u][0] + dis:
                     result[v] = (result[u][0] + dis, u)
+                    relaxed = True
 
         # check negative circle
-        negative_circle = False
         for v, edges in graph.items():
             for u, dis in edges.items():
                 if result[v][0] > result[u][0] + dis:
-                    negative_circle = True
-                    break
+                    return result, True
 
-        return result, negative_circle
+        return result, False
 
     def floyd_warshall(self, graph: Dict[str, Dict[str, int]]) -> Dict[str, Dict[str, int]]:
         """
