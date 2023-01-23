@@ -1,9 +1,24 @@
 import heapq
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List, Optional
 
 
 class Solution:
     MAX_DISTANCE = 0x7ffffffff
+
+    @staticmethod
+    def build_path_from_source(shortest_dis: Dict[str, Tuple[int, str]], source: str) -> Dict[str, Tuple[int, List[str]]]:
+        result = dict()
+        for v, (dis, prev) in shortest_dis.items():
+            if not prev:
+                result[v] = (dis, None)
+                continue
+            path = [v]
+            while prev and prev != source:
+                path.insert(0, prev)
+                _, prev = shortest_dis[prev]
+            path.insert(0, source)
+            result[v] = (dis, path)
+        return result
 
     def dijkstra(self, graph: Dict[str, Dict[str, int]], source: str) -> Dict[str, Tuple[int, str]]:
         """
@@ -14,8 +29,8 @@ class Solution:
         """
         if not graph or source not in graph:
             return dict()
-        result = {source: (0, source)}
-        to_visit = {v: (graph[source].get(v, self.MAX_DISTANCE), source) for v in graph if v != source}
+        result = {source: (0, None)}
+        to_visit = {v: (graph[source].get(v), source) if v in graph[source] else (self.MAX_DISTANCE, None) for v in graph if v != source}
 
         while to_visit:
             # get the shortest distance
@@ -46,10 +61,10 @@ class Solution:
         """
         if not graph or source not in graph:
             return dict()
-        result = {source: (0, source)}
+        result = {source: (0, None)}
         # every element in heap is [distance_from_target, vertex_name, heap_idx, prev_vertex]
         # TC: O(V)
-        heap = [[graph[source].get(v, self.MAX_DISTANCE), v, 0, source] for v in graph if v != source]
+        heap = [[graph[source].get(v, self.MAX_DISTANCE), v, 0, source if v in graph[source] else None] for v in graph if v != source]
         # TC: O(V * logV)
         heapq.heapify(heap)
 
@@ -109,9 +124,9 @@ class Solution:
         """
         if not graph or source not in graph:
             return dict()
-        result = {v: (self.MAX_DISTANCE, source) for v in graph}
-        to_visit = {v: (self.MAX_DISTANCE, source) for v in graph}
-        heap = [(0, source, source)]
+        result = {v: (self.MAX_DISTANCE, None) for v in graph}
+        to_visit = {v: (self.MAX_DISTANCE, None) for v in graph}
+        heap: List[Tuple[int, str, Optional[str]]] = [(0, source, None)]
 
         while to_visit and heap:
             min_dis, picked, prev = heapq.heappop(heap)
@@ -136,8 +151,8 @@ class Solution:
         """
         if not graph or source not in graph:
             return dict(), False
-        result = {v: (self.MAX_DISTANCE, source) for v in graph}
-        result[source] = (0, source)
+        result = {v: (self.MAX_DISTANCE, None) for v in graph}
+        result[source] = (0, None)
 
         # optimization for time complexity
         # For graph as: S -> A -> B -> C -> D,  X -> Y, Y -> Z
@@ -175,7 +190,7 @@ class Solution:
 
         return result, False
 
-    def floyd_warshall(self, graph: Dict[str, Dict[str, int]]) -> Dict[str, Dict[str, int]]:
+    def floyd_warshall(self, graph: Dict[str, Dict[str, int]]) -> Dict[str, Dict[str, Tuple[int, List[str]]]]:
         """
         Floyd-Warshall is a DP algorithm to calculate the shortest distance for every pair of vertices within the graph.
         The algorithm is not based on edges, so the shortest path cannot be backtracked directly as Dijkstra or Bellman-Ford do
@@ -186,7 +201,7 @@ class Solution:
         how the vertices are ordered, therefore, the latest update for Distance(A, D) can be caused by vertex B, but there is no
         edge from B to D.
         :param graph: Dict, key is the source vertex, value is another Dict for edges with weight from source vertex
-        :return: Dict, key is source vertex, value is Dict of the shortest distance from source to destination
+        :return: Dict, key is source vertex, value is Dict of (the shortest distance from source to destination, list of path).
         """
         if not graph:
             return dict()
@@ -200,16 +215,26 @@ class Solution:
         dimension = len(graph.keys())
 
         matrix = [[self.MAX_DISTANCE if r != c else 0 for c in range(dimension)] for r in range(dimension)]
+        matrix_path: List[List[Optional[List[str]]]] = [[None for _ in range(dimension)] for _ in range(dimension)]
 
         for v, edges in graph.items():
             for u, d in edges.items():
-                matrix[idx_map[v]][idx_map[u]] = d
+                row, col = idx_map[v], idx_map[u]
+                matrix[row][col] = d
+                matrix_path[row][col] = [v, u]
 
         for k in range(dimension):
             for i in range(dimension):
+                if i == k or matrix[i][k] == self.MAX_DISTANCE:
+                    continue
                 for j in range(dimension):
+                    if j == k or matrix[k][j] == self.MAX_DISTANCE:
+                        continue
                     if matrix[i][j] > matrix[i][k] + matrix[k][j]:
                         matrix[i][j] = matrix[i][k] + matrix[k][j]
+                        # matrix_path[i][k] is [vi, vx, vy, ... vk]
+                        # matrix_path[k][j] is [vk, vu, ..., vj], so vk is duplicate after connection
+                        matrix_path[i][j] = matrix_path[i][k] + matrix_path[k][j][1:]
 
         result = dict()
         for r in range(dimension):
@@ -217,6 +242,6 @@ class Solution:
             row_map = dict()
             result[v] = row_map
             for c in range(dimension):
-                row_map[rev_map[c]] = matrix[r][c]
+                row_map[rev_map[c]] = (matrix[r][c], matrix_path[r][c])
 
         return result

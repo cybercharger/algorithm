@@ -17,15 +17,16 @@ class TestSolution(TestCase):
     ]
 
     @staticmethod
-    def gen_graph(edges: List[Tuple[str, str, int]]) -> Dict[str, Dict[str, int]]:
+    def gen_graph(edges: List[Tuple[str, str, int]], directional: bool = False) -> Dict[str, Dict[str, int]]:
         graph: Dict[str, Dict[str, int]] = {}
         for n1, n2, distance in edges:
             if n1 not in graph:
-                graph[n1] = {n2: distance}
+                graph[n1] = {}
+            graph[n1].update({n2: distance})
             if n2 not in graph:
                 graph[n2] = {}
-            graph[n1].update({n2: distance})
-            graph[n2].update({n1: distance})
+            if not directional:
+                graph[n2].update({n1: distance})
         return graph
 
     def test_shortest_path(self):
@@ -43,7 +44,7 @@ class TestSolution(TestCase):
         res4, negative_circle = solution.bellman_ford(graph, 'A')
         self.assertEqual(res1, res4)
         self.assertFalse(negative_circle)
-        self.assertEqual({k: v[0] for k, v in res1.items()}, res_all['A'])
+        self.assertEqual(Solution.build_path_from_source(res1, 'A'), res_all['A'])
         print(res1)
         res1 = solution.dijkstra(graph, 'D')
         res2 = solution.dijkstra_by_heap(graph, 'D')
@@ -53,5 +54,5 @@ class TestSolution(TestCase):
         res4, negative_circle = solution.bellman_ford(graph, 'D')
         self.assertEqual(res1, res4)
         self.assertFalse(negative_circle)
-        self.assertEqual({k: v[0] for k, v in res1.items()}, res_all['D'])
+        self.assertEqual(Solution.build_path_from_source(res1, 'D'), res_all['D'])
         print(res1)
