@@ -1,5 +1,6 @@
 import heapq
-from typing import Dict, Tuple, List, Optional
+from collections import deque
+from typing import Dict, Tuple, List, Optional, Deque
 
 
 class Solution:
@@ -214,27 +215,35 @@ class Solution:
 
         dimension = len(graph.keys())
 
-        matrix = [[self.MAX_DISTANCE if r != c else 0 for c in range(dimension)] for r in range(dimension)]
+        not_connected = -2
+        direct = -1
+
+        matrix = [[(self.MAX_DISTANCE, not_connected) if r != c else (0, direct) for c in range(dimension)] for r in range(dimension)]
         matrix_path: List[List[Optional[List[str]]]] = [[None for _ in range(dimension)] for _ in range(dimension)]
 
         for v, edges in graph.items():
             for u, d in edges.items():
                 row, col = idx_map[v], idx_map[u]
-                matrix[row][col] = d
-                matrix_path[row][col] = [v, u]
+                matrix[row][col] = (d, direct)
 
         for k in range(dimension):
             for i in range(dimension):
                 if i == k or matrix[i][k] == self.MAX_DISTANCE:
                     continue
                 for j in range(dimension):
-                    if j == k or matrix[k][j] == self.MAX_DISTANCE:
+                    if j == k or matrix[k][j][0] == self.MAX_DISTANCE:
                         continue
-                    if matrix[i][j] > matrix[i][k] + matrix[k][j]:
-                        matrix[i][j] = matrix[i][k] + matrix[k][j]
-                        # matrix_path[i][k] is [vi, vx, vy, ... vk]
-                        # matrix_path[k][j] is [vk, vu, ..., vj], so vk is duplicate after connection
-                        matrix_path[i][j] = matrix_path[i][k] + matrix_path[k][j][1:]
+                    if matrix[i][j][0] > matrix[i][k][0] + matrix[k][j][0]:
+                        matrix[i][j] = (matrix[i][k][0] + matrix[k][j][0], k)
+
+        def calc_path(m: List[List[Tuple[int, int]]], r: int, c: int) -> Deque[int]:
+            bridge = m[r][c][1]
+            if bridge < 0:
+                return deque()
+            path = calc_path(m, r, bridge)
+            path.append(bridge)
+            path.extend(calc_path(m, bridge, c))
+            return path
 
         result = dict()
         for r in range(dimension):
@@ -242,6 +251,11 @@ class Solution:
             row_map = dict()
             result[v] = row_map
             for c in range(dimension):
-                row_map[rev_map[c]] = (matrix[r][c], matrix_path[r][c])
+                shortest_path = calc_path(matrix, r, c) if r != c and matrix[r][c][1] > not_connected else None
+                if shortest_path is not None:
+                    shortest_path.appendleft(r)
+                    shortest_path.append(c)
+                    shortest_path = [rev_map[i] for i in shortest_path]
+                row_map[rev_map[c]] = (matrix[r][c][0], shortest_path)
 
         return result
