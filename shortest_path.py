@@ -164,14 +164,14 @@ class Solution:
         # TODO: confirm that whether edges to source can be ignored? say, negative case?
         valid_edges = []
         visited = {source}
-        to_visit = [source]
+        to_visit = deque(source)
         while to_visit:
             cur = to_visit.pop()
             for v, dis in graph[cur].items():
                 valid_edges.append((cur, v, dis))
                 if v not in visited:
                     visited.add(v)
-                    to_visit.insert(0, v)
+                    to_visit.appendleft(v)
 
         relaxed = True
         for _ in range(len(graph.keys()) - 1):
@@ -219,7 +219,6 @@ class Solution:
         direct = -1
 
         matrix = [[(self.MAX_DISTANCE, not_connected) if r != c else (0, direct) for c in range(dimension)] for r in range(dimension)]
-        matrix_path: List[List[Optional[List[str]]]] = [[None for _ in range(dimension)] for _ in range(dimension)]
 
         for v, edges in graph.items():
             for u, d in edges.items():
